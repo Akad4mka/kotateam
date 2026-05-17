@@ -18,7 +18,11 @@ public class TeamModConfig {
     public boolean pvpProtect = true;
     public boolean nameColor = true;
 
+    
+    public int teamColor = 0x00B8AA;
+
     public List<String> teammates = new ArrayList<>();
+
 
     public static boolean settingsExpanded = true;
     public static boolean listExpanded = true;

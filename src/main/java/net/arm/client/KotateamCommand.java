@@ -4,6 +4,8 @@ import com.mojang.brigadier.CommandDispatcher;
 import com.mojang.brigadier.arguments.StringArgumentType;
 import net.fabricmc.fabric.api.client.command.v2.ClientCommandManager;
 import net.fabricmc.fabric.api.client.command.v2.FabricClientCommandSource;
+import net.minecraft.client.MinecraftClient;
+import net.minecraft.client.network.PlayerListEntry;
 import net.minecraft.text.Text;
 import net.minecraft.util.Formatting;
 
@@ -12,6 +14,21 @@ public class KotateamCommand {
         dispatcher.register(ClientCommandManager.literal("kotateam")
                 .then(ClientCommandManager.literal("add")
                         .then(ClientCommandManager.argument("name", StringArgumentType.word())
+                                
+                                .suggests((ctx, builder) -> {
+                                    MinecraftClient client = MinecraftClient.getInstance();
+                                    if (client.getNetworkHandler() != null) {
+                                        
+                                        for (PlayerListEntry player : client.getNetworkHandler().getPlayerList()) {
+                                            String playerName = player.getProfile().getName();
+                                            
+                                            if (ArmTeamMateClient.config != null && !ArmTeamMateClient.config.teammates.contains(playerName)) {
+                                                builder.suggest(playerName);
+                                            }
+                                        }
+                                    }
+                                    return builder.buildFuture();
+                                })
                                 .executes(ctx -> {
                                     String name = StringArgumentType.getString(ctx, "name");
 
@@ -27,6 +44,15 @@ public class KotateamCommand {
                                 })))
                 .then(ClientCommandManager.literal("remove")
                         .then(ClientCommandManager.argument("name", StringArgumentType.word())
+                                
+                                .suggests((ctx, builder) -> {
+                                    if (ArmTeamMateClient.config != null && ArmTeamMateClient.config.teammates != null) {
+                                        for (String teammateName : ArmTeamMateClient.config.teammates) {
+                                            builder.suggest(teammateName);
+                                        }
+                                    }
+                                    return builder.buildFuture();
+                                })
                                 .executes(ctx -> {
                                     String name = StringArgumentType.getString(ctx, "name");
 

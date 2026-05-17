@@ -3,10 +3,8 @@
 	"package": "net.arm.mixin",
 	"compatibilityLevel": "JAVA_21",
 	"mixins": [
-		"GlowVisibilityMixin",
-		"ArmorColorMixin",
-		"FriendlyFireMixin",
-		"HandledScreenAccessor"
+		"EntityRendererMixin",
+		"ArmorFeatureRendererMixin"
 	],
 	"injectors": {
 		"defaultRequire": 1

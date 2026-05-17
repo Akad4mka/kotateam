@@ -19,14 +19,15 @@
 		"fabric-datagen": [
 			"net.arm.TeammateDataGenerator"
 		],
-		"client": ["net.arm.client.ArmTeamMateClient"]
+		"client": ["net.arm.client.ArmTeamMateClient",
+			"net.arm.client.ArmClientHitboxes"]
 	},
 	"mixins": [
 		"teammate.mixins.json"
 	],
 	"depends": {
 		"fabricloader": ">=0.14.25",
-		"minecraft": "~1.21.11",
+		"minecraft": "~1.21",
 		"java": ">=21",
 		"fabric-api": "*"
 	}
