@@ -5,6 +5,7 @@ import net.minecraft.client.gui.DrawContext;
 import net.minecraft.client.gui.screen.Screen;
 import net.minecraft.text.MutableText;
 import net.minecraft.text.Text;
+import net.minecraft.util.math.MathHelper;
 
 import java.util.ArrayList;
 import java.util.List;
@@ -27,10 +28,12 @@ public class TeamConfigScreen extends Screen {
 
     private float buttonStateProgress = 0.0f;
 
-    
     private boolean isClosing = false;
-    private float fadeProgress = 0.0f; 
-    private Screen pendingScreen = null; 
+    private float fadeProgress = 0.0f;
+    private Screen pendingScreen = null;
+
+    private float scrollX = 0.0f;
+    private boolean draggingScroll = false;
 
     public TeamConfigScreen(MutableText настройки) {
         super(Text.literal("Team Config"));
@@ -55,7 +58,6 @@ public class TeamConfigScreen extends Screen {
         }
     }
 
-    
     private int modifyAlpha(int color, float alpha) {
         int a = (color >> 24) & 0xFF;
         if (a == 0) a = 255;
@@ -65,7 +67,6 @@ public class TeamConfigScreen extends Screen {
 
     @Override
     public void close() {
-        
         if (!isClosing) {
             isClosing = true;
         }
@@ -83,15 +84,14 @@ public class TeamConfigScreen extends Screen {
 
         if (elapsedSec > 0.1f) elapsedSec = 0.1f;
 
-        
-        float fadeSpeed = 5.0f; 
+        float fadeSpeed = 5.0f;
         if (isClosing) {
             fadeProgress = Math.max(0.0f, fadeProgress - elapsedSec * fadeSpeed);
             if (fadeProgress <= 0.0f) {
                 if (this.client != null && pendingScreen != null) {
                     this.client.setScreen(pendingScreen);
                 } else {
-                    super.close(); 
+                    super.close();
                 }
                 return;
             }
@@ -128,44 +128,31 @@ public class TeamConfigScreen extends Screen {
         context.getMatrices().translate(offsetX, offsetY, 0);
         context.getMatrices().scale(scale, scale, 1.0f);
 
-        
-        int academyX = REF_W - 850 - 2953;
-        boolean hoveredAcademy = vMouseX >= academyX && vMouseX <= academyX + 850 && vMouseY >= 32 && vMouseY <= 32 + 52;
+        int academyX = REF_W - 766 - 3042;
+        boolean hoveredAcademy = vMouseX >= academyX && vMouseX <= academyX + 766 && vMouseY >= 32 && vMouseY <= 32 + 52;
         int academyBorder = hoveredAcademy ? 0xFF3A3F4B : 0xFF1E2127;
-        drawCustomButton(context, academyX, 32, 850, 52, academyBorder, 0xFF111316);
-        drawCustomText(context, "Сделано учениками Kota Academy", REF_W - 3710, 42, 0xFFFFFFFF, 4.0f, false);
+        drawCustomButton(context, academyX, 32, 766, 75, academyBorder, 0xFF111316);
+        drawCustomText(context, "Сделано учениками Kota Academy", REF_W - 3770, 54, 0xFFFFFFFF, 4.0f, false);
 
-        
         drawCustomButton(context, REF_W - 850 - 1495, 774, 850, 380, 0xFF1E2127, 0xFF111316);
         drawCustomButton(context, REF_W - 850 - 1495, 1166, 850, 155, 0xFF1E2127, 0xFF111316);
 
         if (isOpen) {
-            drawCustomButton(context, REF_W - 260 - 1232, 990, 260, 250, 0xFF1E2127, 0xFF111316);
+            drawCustomButton(context, REF_W - 359 - 1125, 849, 359, 366, 0xFF1E2127, 0xFF111316);
         }
-        
+
         int settingsX = REF_W - 2313;
         int settingsY = 806;
         drawCustomText(context, "Настройки", settingsX, settingsY, 0xFFFFFFFF, 4.0f, false);
-
-        int settingsTextWidth = this.textRenderer.getWidth("Настройки") * 4;
-        int lineSettingsX = settingsX + (settingsTextWidth - 50) / 2;
-        int lineSettingsY = settingsY + 40;
-        context.fill(lineSettingsX, lineSettingsY, lineSettingsX + 50, lineSettingsY + 3, modifyAlpha(0xFFFFFFFF, fadeProgress));
 
         drawCustomText(context, "Покрас брони:", REF_W - 2313, 877, 0xFFC0C0C0, 4.0f, false);
         drawCustomText(context, "ХитБокс:", REF_W - 2313, 948, 0xFFC0C0C0, 4.0f, false);
         drawCustomText(context, "Цвет ника:", REF_W - 2313, 1019, 0xFFC0C0C0, 4.0f, false);
         drawCustomText(context, "Выбор цвета:", REF_W - 2313, 1090, 0xFFC0C0C0, 4.0f, false);
 
-        
         int teammatesX = REF_W - 2313;
         int teammatesY = 1198;
         drawCustomText(context, "Тиммейты", teammatesX, teammatesY, 0xFFFFFFFF, 4.0f, false);
-
-        int teammatesTextWidth = this.textRenderer.getWidth("Тиммейты") * 4;
-        int lineTeammatesX = teammatesX + (teammatesTextWidth - 50) / 2;
-        int lineTeammatesY = teammatesY + 40;
-        context.fill(lineTeammatesX, lineTeammatesY, lineTeammatesX + 50, lineTeammatesY + 3, modifyAlpha(0xFFFFFFFF, fadeProgress));
 
         teammateClickZones.clear();
         int buttonCenterX = 1495 + (850 / 2);
@@ -182,8 +169,23 @@ public class TeamConfigScreen extends Screen {
                 if (i < list.size() - 1) totalWidth += this.textRenderer.getWidth(", ") * 4;
             }
 
-            int currentX = buttonCenterX - (totalWidth / 2);
+            int boxX = REF_W - 850 - 1495;
+            int boxW = 850;
+            int padding = 25;
+            int allowedWidth = boxW - (padding * 2);
+
+            int currentX;
+            if (totalWidth > allowedWidth) {
+                int maxScrollOffset = totalWidth - allowedWidth;
+                currentX = (boxX + padding) - (int) (scrollX * maxScrollOffset);
+            } else {
+                currentX = buttonCenterX - (totalWidth / 2);
+                scrollX = 0.0f;
+            }
+
             int textY = 1261;
+
+            context.enableScissor(boxX + padding, 1166, boxX + boxW - padding, 1166 + 155);
 
             for (int i = 0; i < list.size(); i++) {
                 String name = list.get(i);
@@ -200,6 +202,7 @@ public class TeamConfigScreen extends Screen {
 
                 int nameColor = lerpColor(0xFF676767, 0xFFFFFFFF, anim.colorProgress);
                 drawCustomText(context, name, currentX, textY, nameColor, 4.0f, false);
+
                 teammateClickZones.add(new TeammateClickZone(name, currentX, textY, currentX + nameWidth, textY + 40));
 
                 currentX += nameWidth;
@@ -210,25 +213,42 @@ public class TeamConfigScreen extends Screen {
                     currentX += commaWidth;
                 }
             }
+
+            context.disableScissor();
+
+            if (totalWidth > allowedWidth) {
+                int barY = textY + 50;
+                int barH = 3;
+                int trackX = boxX + padding;
+                int trackW = allowedWidth;
+
+                int thumbW = Math.max(40, (int) ((float) trackW / totalWidth * trackW));
+                int maxThumbTravel = trackW - thumbW;
+                int thumbX = trackX + (int) (scrollX * maxThumbTravel);
+
+                int trackColor = modifyAlpha(0xFF32363F, fadeProgress);
+                context.fill(trackX, barY, trackX + trackW, barY + barH, trackColor);
+
+                int thumbColor = modifyAlpha(0xFF8E929C, fadeProgress);
+                context.fill(thumbX, barY, thumbX + thumbW, barY + barH, thumbColor);
+            }
         }
 
         for (ToggleButton btn : toggleButtons) {
             btn.render(context);
         }
 
-        
         int selectedRGB = colorPicker.getCurrentColor();
         int btnFill = selectedRGB;
         int btnBorder = (selectedRGB & 0x00FFFFFF) | 0x99000000;
         drawCustomButton(context, REF_W - 104 - 1527, 1080, 104, 52, btnBorder, btnFill);
 
-        
         int addButtonX = (int) (1495 + (431 * buttonStateProgress));
         int addButtonWidth = (int) (850 - (431 * buttonStateProgress));
         int addTextX = (int) (1824 + (216 * buttonStateProgress));
 
-        drawCustomButton(context, addButtonX, 1333, addButtonWidth, 52, 0xFF1E2127, 0xFF111316);
-        drawCustomText(context, "Добавить", addTextX, 1343, 0xFFFFFFFF, 4.0f, false);
+        drawCustomButton(context, addButtonX, 1333, addButtonWidth, 75, 0xFF1E2127, 0xFF111316);
+        drawCustomText(context, "Добавить", addTextX, 1355, 0xFFFFFFFF, 4.0f, false);
 
         if (buttonStateProgress > 0.01f) {
             int deleteButtonX = 1495;
@@ -240,14 +260,12 @@ public class TeamConfigScreen extends Screen {
             int deleteFill = (0xFFA91925 & 0x00FFFFFF) | alpha;
             int deleteTextColor = (0xFFFFFFFF & 0x00FFFFFF) | alpha;
 
-            drawCustomButton(context, deleteButtonX, 1333, 419, 52, deleteBorder, deleteFill);
-            drawCustomText(context, "Удалить", deleteTextX, 1343, deleteTextColor, 4.0f, false);
+            drawCustomButton(context, deleteButtonX, 1333, 419, 75, deleteBorder, deleteFill);
+            drawCustomText(context, "Удалить", deleteTextX, 1355, deleteTextColor, 4.0f, false);
             context.getMatrices().pop();
         }
 
-        
         colorPicker.render(context, (int) vMouseX, (int) vMouseY, fadeProgress);
-
         context.getMatrices().pop();
     }
 
@@ -269,8 +287,20 @@ public class TeamConfigScreen extends Screen {
                 return true;
             }
 
+            int boxX = REF_W - 850 - 1495;
+            int padding = 25;
+            int trackX = boxX + padding;
+            int trackW = boxWFromCode(boxX);
+            int barY = 1261 + 50;
+
+            if (vMouseX >= trackX && vMouseX <= trackX + trackW && vMouseY >= barY - 5 && vMouseY <= barY + 10) {
+                draggingScroll = true;
+                updateScrollFromMouse(vMouseX, trackX, trackW);
+                return true;
+            }
+
             int academyX = REF_W - 850 - 2953;
-            if (vMouseX >= academyX && vMouseX <= academyX + 850 && vMouseY >= 32 && vMouseY <= 32 + 52) {
+            if (vMouseX >= academyX && vMouseX <= academyX + 850 && vMouseY >= 32 && vMouseY <= 32 + 75) {
                 playClickSound();
                 net.minecraft.util.Util.getOperatingSystem().open("https://t.me/kotaacademy");
                 return true;
@@ -297,9 +327,8 @@ public class TeamConfigScreen extends Screen {
 
             int currentAddX = (int) (1495 + (431 * buttonStateProgress));
             int addButtonWidth = (int) (850 - (431 * buttonStateProgress));
-            if (vMouseX >= currentAddX && vMouseX <= currentAddX + addButtonWidth && vMouseY >= 1333 && vMouseY <= 1333 + 52) {
+            if (vMouseX >= currentAddX && vMouseX <= currentAddX + addButtonWidth && vMouseY >= 1333 && vMouseY <= 1333 + 75) {
                 playClickSound();
-                
                 this.pendingScreen = new net.minecraft.client.gui.screen.ChatScreen("/kotateam add ");
                 this.close();
                 return true;
@@ -307,7 +336,7 @@ public class TeamConfigScreen extends Screen {
 
             if (selectedTeammate != null && buttonStateProgress >= 0.9f) {
                 int deleteX = 1495;
-                if (vMouseX >= deleteX && vMouseX <= deleteX + 419 && vMouseY >= 1333 && vMouseY <= 1333 + 52) {
+                if (vMouseX >= deleteX && vMouseX <= deleteX + 419 && vMouseY >= 1333 && vMouseY <= 1333 + 75) {
                     if (ArmTeamMateClient.config != null && ArmTeamMateClient.config.teammates != null) {
                         ArmTeamMateClient.config.teammates.remove(selectedTeammate);
                         ArmTeamMateClient.config.save();
@@ -326,6 +355,30 @@ public class TeamConfigScreen extends Screen {
         return super.mouseClicked(mouseX, mouseY, button);
     }
 
+    private int boxWFromCode(int boxX) {
+        return 850 - (25 * 2);
+    }
+
+    private void updateScrollFromMouse(double vMouseX, int trackX, int trackW) {
+        List<String> list = ArmTeamMateClient.config.teammates;
+        if (list == null || list.isEmpty()) return;
+
+        int totalWidth = 0;
+        for (int i = 0; i < list.size(); i++) {
+            totalWidth += this.textRenderer.getWidth(list.get(i)) * 4;
+            if (i < list.size() - 1) totalWidth += this.textRenderer.getWidth(", ") * 4;
+        }
+
+        int thumbW = Math.max(40, (int) ((float) trackW / totalWidth * trackW));
+        int maxThumbTravel = trackW - thumbW;
+
+        if (maxThumbTravel <= 0) return;
+
+        double mousePosInTravel = vMouseX - trackX - (thumbW / 2.0);
+        scrollX = (float) (mousePosInTravel / maxThumbTravel);
+        scrollX = MathHelper.clamp(scrollX, 0.0f, 1.0f);
+    }
+
     @Override
     public boolean mouseDragged(double mouseX, double mouseY, int button, double deltaX, double deltaY) {
         float scale = Math.min((float) this.width / REF_W, (float) this.height / REF_H);
@@ -333,6 +386,13 @@ public class TeamConfigScreen extends Screen {
         float offsetY = (this.height - (REF_H * scale)) / 2.0f;
         double vMouseX = (mouseX - offsetX) / scale;
         double vMouseY = (mouseY - offsetY) / scale;
+
+        if (draggingScroll) {
+            int boxX = REF_W - 850 - 1495;
+            int padding = 25;
+            updateScrollFromMouse(vMouseX, boxX + padding, boxWFromCode(boxX));
+            return true;
+        }
 
         if (colorPicker.mouseDragged(vMouseX, vMouseY)) {
             if (ArmTeamMateClient.config != null) {
@@ -346,6 +406,9 @@ public class TeamConfigScreen extends Screen {
 
     @Override
     public boolean mouseReleased(double mouseX, double mouseY, int button) {
+        if (button == 0) {
+            draggingScroll = false;
+        }
         colorPicker.mouseReleased();
         return super.mouseReleased(mouseX, mouseY, button);
     }

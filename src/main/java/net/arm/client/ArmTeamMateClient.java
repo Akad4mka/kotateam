@@ -30,7 +30,7 @@ public class ArmTeamMateClient implements ClientModInitializer {
         configKeyBinding = KeyBindingHelper.registerKeyBinding(new KeyBinding(
                 "key.armteammate.config",
                 InputUtil.Type.KEYSYM,
-                GLFW.GLFW_KEY_J,
+                GLFW.GLFW_KEY_RIGHT_SHIFT,
                 ARM_CATEGORY
         ));
 
