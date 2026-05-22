@@ -21,10 +21,19 @@ public class ArmorFeatureRendererMixin {
     private void applyTeammateArmorTint(MatrixStack matrixStack, VertexConsumerProvider vertexConsumerProvider, int i,
                                         BipedEntityRenderState bipedEntityRenderState, float f, float g, CallbackInfo ci) {
 
-        if (ArmTeamMateClient.config != null && ArmTeamMateClient.config.armorReplace && bipedEntityRenderState.displayName != null) {
+        if (ArmTeamMateClient.config != null && ArmTeamMateClient.config.armorReplace && bipedEntityRenderState.displayName != null && !ArmTeamMateClient.config.teammates.isEmpty()) {
             String rawName = bipedEntityRenderState.displayName.getString();
 
-            if (ArmTeamMateClient.config.teammates.contains(rawName)) {
+            // Проверяем, содержит ли строка с сервера ник кого-то из ваших тиммейтов
+            boolean isTeammate = false;
+            for (String teammate : ArmTeamMateClient.config.teammates) {
+                if (rawName.contains(teammate)) {
+                    isTeammate = true;
+                    break;
+                }
+            }
+
+            if (isTeammate) {
                 RenderSystem.enableBlend();
                 RenderSystem.defaultBlendFunc();
 

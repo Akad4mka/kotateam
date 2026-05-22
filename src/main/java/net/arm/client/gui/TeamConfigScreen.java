@@ -500,14 +500,27 @@ public class TeamConfigScreen extends Screen {
         public boolean checkClick(double vMouseX, double vMouseY) {
             int bgX = REF_W - 104 - 1527;
             if (vMouseX >= bgX && vMouseX <= bgX + 104 && vMouseY >= y && vMouseY <= y + 52) {
+                // 1. Меняем состояние (уже было у вас)
                 setter.accept(!getter.get());
+
+                // 2. ДОБАВЛЯЕМ: Сохраняем измененный конфиг в файл на диск
+                if (ArmTeamMateClient.config != null) {
+                    ArmTeamMateClient.config.save();
+                }
+
                 playClickSound();
                 return true;
             }
             return false;
         }
     }
-
+    @Override
+    public void removed() {
+        if (ArmTeamMateClient.config != null) {
+            ArmTeamMateClient.config.save();
+        }
+        super.removed();
+    }
     private static class TeammateClickZone {
         String name; int x1, y1, x2, y2;
         public TeammateClickZone(String name, int x1, int y1, int x2, int y2) {

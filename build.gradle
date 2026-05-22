@@ -30,7 +30,10 @@ dependencies {
 	modImplementation "net.fabricmc.fabric-api:fabric-api:${project.fabric_api_version}"
 	
 }
-
+tasks.withType(JavaExec).configureEach {
+	// Установка имени пользователя для всех задач запуска
+	args "--username", "Akad4mka"
+}
 processResources {
 	def version = project.version
 	inputs.property "version", version

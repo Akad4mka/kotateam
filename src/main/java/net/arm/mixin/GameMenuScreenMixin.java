@@ -62,7 +62,7 @@ public class GameMenuScreenMixin extends Screen {
                     btnX, optionsY, buttonWidth, buttonHeight,
                     Text.literal("Скачать больше модов!"),
                     button -> {
-                        Util.getOperatingSystem().open("https://t.me/kotaacademy");
+                        Util.getOperatingSystem().open("https://t.me/kotamods_bot");
                     }
             ));
         }
