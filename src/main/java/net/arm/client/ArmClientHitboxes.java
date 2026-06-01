@@ -21,27 +21,22 @@ public class ArmClientHitboxes implements ClientModInitializer {
             MinecraftClient client = MinecraftClient.getInstance();
             if (client.world == null || client.player == null) return;
 
-            
             if (ArmTeamMateClient.config == null || !ArmTeamMateClient.config.highlightGlow) return;
 
             Matrix4f matrix = context.matrixStack().peek().getPositionMatrix();
             var cameraPos = context.camera().getPos();
 
-            
             float tickDelta = context.tickCounter().getTickDelta(true);
 
             setupRenderState();
-
             
             for (Entity entity : client.world.getEntities()) {
                 if (!(entity instanceof PlayerEntity player)) continue;
 
-                
                 if (player == client.cameraEntity && client.options.getPerspective().isFirstPerson()) continue;
 
                 String playerName = player.getName().getString();
 
-                
                 if (ArmTeamMateClient.config.teammates.contains(playerName)) {
                     
                     Box visualBox = BoxRenderUtils.getInterpolatedBox(player, tickDelta, cameraPos, 0.0);
@@ -53,7 +48,6 @@ public class ArmClientHitboxes implements ClientModInitializer {
                     renderTeammateBox(matrix, visualBox, r, g, b);
                 }
             }
-
             resetRenderState();
         });
     }

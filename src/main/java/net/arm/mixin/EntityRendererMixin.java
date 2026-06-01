@@ -1,35 +1,35 @@
 package net.arm.mixin;
 
 import net.arm.client.ArmTeamMateClient;
-import net.minecraft.client.render.VertexConsumerProvider;
 import net.minecraft.client.render.entity.EntityRenderer;
 import net.minecraft.client.render.entity.state.EntityRenderState;
-import net.minecraft.client.util.math.MatrixStack;
 import net.minecraft.text.MutableText;
 import net.minecraft.text.Text;
 import net.minecraft.text.TextColor;
 import org.spongepowered.asm.mixin.Mixin;
+import org.spongepowered.asm.mixin.Unique;
 import org.spongepowered.asm.mixin.injection.At;
-import org.spongepowered.asm.mixin.injection.Inject;
-import org.spongepowered.asm.mixin.injection.callback.CallbackInfo;
+import org.spongepowered.asm.mixin.injection.ModifyVariable;
 
 @Mixin(EntityRenderer.class)
 public class EntityRendererMixin<T extends net.minecraft.entity.Entity, S extends EntityRenderState> {
 
-    @Inject(method = "render", at = @At("HEAD"))
-    private void modifyLabelText(S state, MatrixStack matrices, VertexConsumerProvider vertexConsumers, int light, CallbackInfo ci) {
-        if (ArmTeamMateClient.config == null || !ArmTeamMateClient.config.nameColor || state.displayName == null || ArmTeamMateClient.config.teammates.isEmpty()) {
-            return;
+    @ModifyVariable(
+            method = "renderLabelIfPresent",
+            at = @At("HEAD"),
+            argsOnly = true
+    )
+    private Text modifyLabelText(Text text, S state) {
+        if (ArmTeamMateClient.config == null || !ArmTeamMateClient.config.nameColor || text == null || ArmTeamMateClient.config.teammates.isEmpty()) {
+            return text;
         }
 
-        // Получаем полную строку, включая все префиксы и суффиксы сервера
-        String fullRawName = state.displayName.getString();
+        String fullRawName = text.getString();
         boolean isTeammate = false;
         String matchedName = "";
 
-        // Проверяем, содержится ли ник кого-то из тиммейтов в этой строке
         for (String teammate : ArmTeamMateClient.config.teammates) {
-            if (fullRawName.contains(teammate)) {
+            if (fullRawName.toLowerCase().contains(teammate.toLowerCase())) {
                 isTeammate = true;
                 matchedName = teammate;
                 break;
@@ -37,48 +37,42 @@ public class EntityRendererMixin<T extends net.minecraft.entity.Entity, S extend
         }
 
         if (isTeammate) {
-            // Если тиммейт найден, рекурсивно перекрашиваем только его ник
-            state.displayName = applyTeammateColor(state.displayName, matchedName);
+            return arm$applyTeammateColor(text, matchedName);
         }
+
+        return text;
     }
 
-    /**
-     * Рекурсивный метод для сохранения структуры текста (префиксов/кланов).
-     * Работает по аналогии с вашим modifyTeammateStyles для чата.
-     */
-    private Text applyTeammateColor(Text text, String teammateName) {
+    @Unique
+    private Text arm$applyTeammateColor(Text text, String teammateName) {
         String content = text.getLiteralString();
         MutableText modified;
 
-        if (content != null && content.contains(teammateName)) {
-            int index = content.indexOf(teammateName);
+        if (content != null && content.toLowerCase().contains(teammateName.toLowerCase())) {
+            int index = content.toLowerCase().indexOf(teammateName.toLowerCase());
             String before = content.substring(0, index);
+            String actualTeammateName = content.substring(index, index + teammateName.length());
             String after = content.substring(index + teammateName.length());
 
             modified = Text.empty();
 
-            // Добавляем то, что было ДО ника (например, префикс [Admin])
             if (!before.isEmpty()) {
                 modified.append(Text.literal(before).setStyle(text.getStyle()));
             }
 
-            // Красим сам ник в цвет команды и делаем жирным
             int currentHex = ArmTeamMateClient.config.teamColor;
             TextColor dynamicColor = TextColor.fromRgb(currentHex);
-            modified.append(Text.literal(teammateName).setStyle(text.getStyle().withColor(dynamicColor).withBold(true)));
+            modified.append(Text.literal(actualTeammateName).setStyle(text.getStyle().withColor(dynamicColor).withBold(true)));
 
-            // Добавляем то, что ПОСЛЕ ника
             if (!after.isEmpty()) {
                 modified.append(Text.literal(after).setStyle(text.getStyle()));
             }
         } else {
-            // Если в этом куске текста нет ника, просто копируем его как есть
             modified = text.copyContentOnly().setStyle(text.getStyle());
         }
 
-        // Рекурсивно обрабатываем всех "детей" (siblings) этого текста
         for (Text sibling : text.getSiblings()) {
-            modified.append(applyTeammateColor(sibling, teammateName));
+            modified.append(arm$applyTeammateColor(sibling, teammateName));
         }
 
         return modified;

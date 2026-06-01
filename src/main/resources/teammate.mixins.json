@@ -4,8 +4,9 @@
 	"compatibilityLevel": "JAVA_21",
 	"mixins": [
 		"EntityRendererMixin",
-		"ArmorFeatureRendererMixin",
-		"GameMenuScreenMixin"
+		"GameMenuScreenMixin",
+		"EquipmentRendererMixin"
+
 	],
 	"injectors": {
 		"defaultRequire": 1

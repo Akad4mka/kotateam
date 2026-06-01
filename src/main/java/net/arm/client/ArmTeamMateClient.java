@@ -15,13 +15,10 @@ import org.lwjgl.glfw.GLFW;
 import net.arm.client.gui.TeamConfigScreen;
 
 public class ArmTeamMateClient implements ClientModInitializer {
-
+    public static boolean isTeammateRendering = false;
     public static TeamModConfig config;
     private static KeyBinding configKeyBinding;
     public static final String ARM_CATEGORY = "category.armteammate.main";
-
-    
-    public static final TextColor TEAMMATE_COLOR = TextColor.fromRgb(0x00B8AA);
 
     @Override
     public void onInitializeClient() {
@@ -30,7 +27,7 @@ public class ArmTeamMateClient implements ClientModInitializer {
         configKeyBinding = KeyBindingHelper.registerKeyBinding(new KeyBinding(
                 "key.armteammate.config",
                 InputUtil.Type.KEYSYM,
-                GLFW.GLFW_KEY_RIGHT_SHIFT,
+                GLFW.GLFW_KEY_J,
                 ARM_CATEGORY
         ));
 
@@ -46,7 +43,7 @@ public class ArmTeamMateClient implements ClientModInitializer {
             }
         });
 
-        
+
         ClientReceiveMessageEvents.MODIFY_GAME.register((message, overlay) -> {
             if (config == null || !config.nameColor || config.teammates.isEmpty()) {
                 return message;
@@ -55,19 +52,21 @@ public class ArmTeamMateClient implements ClientModInitializer {
         });
     }
 
-    /**
-     * Исправленный рекурсивный метод. Теперь он проверяет, содержит ли кусок текста ник тиммейта,
-     * что позволяет красить ники даже при наличии серверных префиксов/рангов в одной строке.
-     */
     private Text modifyTeammateStyles(Text text) {
-        String content = text.getLiteralString();
+        String content = text.getString();
+        for (Text sibling : text.getSiblings()) {
+            String siblingStr = sibling.getString();
+            if (content.endsWith(siblingStr)) {
+                content = content.substring(0, content.length() - siblingStr.length());
+            }
+        }
+
         MutableText modified;
 
         if (content != null && !content.isEmpty()) {
             boolean foundTeammate = false;
             String matchedName = "";
 
-            
             for (String teammate : config.teammates) {
                 if (content.contains(teammate)) {
                     foundTeammate = true;
@@ -77,7 +76,6 @@ public class ArmTeamMateClient implements ClientModInitializer {
             }
 
             if (foundTeammate) {
-                
                 int index = content.indexOf(matchedName);
                 String before = content.substring(0, index);
                 String after = content.substring(index + matchedName.length());
@@ -85,7 +83,6 @@ public class ArmTeamMateClient implements ClientModInitializer {
                 modified = Text.empty();
                 if (!before.isEmpty()) modified.append(Text.literal(before).setStyle(text.getStyle()));
 
-                
                 int currentHex = (config != null) ? config.teamColor : 0x00B8AA;
                 TextColor dynamicColor = TextColor.fromRgb(currentHex);
 
@@ -93,10 +90,10 @@ public class ArmTeamMateClient implements ClientModInitializer {
 
                 if (!after.isEmpty()) modified.append(Text.literal(after).setStyle(text.getStyle()));
             } else {
-                modified = text.copyContentOnly().setStyle(text.getStyle());
+                modified = Text.literal(content).setStyle(text.getStyle());
             }
         } else {
-            modified = text.copyContentOnly().setStyle(text.getStyle());
+            modified = Text.empty().setStyle(text.getStyle());
         }
 
         for (Text sibling : text.getSiblings()) {

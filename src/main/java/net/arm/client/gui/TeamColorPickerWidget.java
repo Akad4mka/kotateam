@@ -17,22 +17,15 @@ public class TeamColorPickerWidget {
     private boolean draggingSV = false;
     private boolean draggingHue = false;
 
-    // --- Масштабирование размеров в 1.6 раза ---
     private static final int REF_W = 3840;
 
-    // Новые увеличенные размеры (в 1.6 раза больше оригинальных)
-    private final int bgW = 416; // Было 260
-    private final int bgH = 400; // Было 250
+    private final int bgW = 416;
+    private final int bgH = 400;
 
-    // Смещение bgX вправо на 156 пикселей, чтобы левая граница сдвинулась, а правая ушла дальше
-    // Оригинальный расчет: REF_W - 260 - 1232. Добавляем 156 -> -260 + 156 = -104
     private final int bgX = REF_W - 104 - 1400;
 
-    // Смещение bgY вверх на 150 пикселей, чтобы компенсировать рост высоты вниз
-    // Оригинальное значение: 990. Вычитаем 150 -> 840
     private final int bgY = 840;
 
-    // Внутренние элементы палитры
     private final int pad = 32;
     private final int svSize = 256;
     private final int hueWidth = 38;
@@ -91,7 +84,6 @@ public class TeamColorPickerWidget {
         context.fill(hueX - 2, hueCursorY - 2, hueX + hueWidth + 2, hueCursorY + 2, modifyAlpha(0xFFFFFFFF, alpha));
         context.fill(hueX, hueCursorY - 1, hueX + hueWidth, hueCursorY + 1, modifyAlpha(0xFF000000, alpha));
 
-        // Смещаем превью вниз с учетом увеличенного размера (15 * 1.6 ≈ 24)
         int previewY = svY + svSize + 24;
         String hexText = String.format("#%06X", (currentColor & 0xFFFFFF));
 
@@ -99,12 +91,10 @@ public class TeamColorPickerWidget {
 
         context.getMatrices().push();
         context.getMatrices().translate(svX, previewY, 0);
-        // Текст hex-кода также можно слегка увеличить или оставить прежним (сейчас scale 3.0f)
         context.getMatrices().scale(3.0f, 3.0f, 1.0f);
         context.drawText(textRenderer, hexText, 0, 0, modifyAlpha(0xFFFFFFFF, alpha), false);
         context.getMatrices().pop();
 
-        // Пропорционально увеличили размер кастомной кнопки (44*1.6 ≈ 70, 34*1.6 ≈ 54)
         drawCustomButton(context, hueX - 20, previewY - 5, 70, 54, dynamicBorderColor, currentColor, alpha);
     }
 
@@ -159,7 +149,7 @@ public class TeamColorPickerWidget {
     }
 
     private void updateHue(double mouseY, int svY) {
-        this.hue = MathHelper.clamp((float) (mouseY - svY) / svSize, 0f, 1f);
+        this.hue = MathHelper.clamp((float) (mouseY - svY) / svSize, 0f, 0.998f);
     }
 
     private void drawSVBox(DrawContext context, int x, int y, int w, int h, float hue, float alpha) {
@@ -210,9 +200,8 @@ public class TeamColorPickerWidget {
         borderColor = modifyAlpha(borderColor, alpha);
         fillColor = modifyAlpha(fillColor, alpha);
 
-        // Увеличил срезы (cut) и толщину (thick) под новый размер кнопки
-        int cut = 12;   // было 8
-        int thick = 6;  // было 4
+        int cut = 12;
+        int thick = 6;
         context.fill(x + cut, y, x + width - cut, y + height, borderColor);
         context.fill(x, y + cut, x + width, y + height - cut, borderColor);
         int fillOffset = cut + thick;

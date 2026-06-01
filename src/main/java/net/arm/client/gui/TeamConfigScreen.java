@@ -137,9 +137,6 @@ public class TeamConfigScreen extends Screen {
         drawCustomButton(context, REF_W - 850 - 1495, 774, 850, 380, 0xFF1E2127, 0xFF111316);
         drawCustomButton(context, REF_W - 850 - 1495, 1166, 850, 155, 0xFF1E2127, 0xFF111316);
 
-        if (isOpen) {
-            drawCustomButton(context, REF_W - 359 - 1125, 849, 359, 366, 0xFF1E2127, 0xFF111316);
-        }
 
         int settingsX = REF_W - 2313;
         int settingsY = 806;
@@ -264,6 +261,12 @@ public class TeamConfigScreen extends Screen {
             drawCustomText(context, "Удалить", deleteTextX, 1355, deleteTextColor, 4.0f, false);
             context.getMatrices().pop();
         }
+        context.draw();
+        if (isOpen) {
+            drawCustomButton(context, REF_W - 359 - 1125, 849, 359, 366, 0xFF1E2127, 0xFF111316);
+        }
+        context.draw();
+
 
         colorPicker.render(context, (int) vMouseX, (int) vMouseY, fadeProgress);
         context.getMatrices().pop();
