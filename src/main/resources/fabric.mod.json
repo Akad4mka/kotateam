@@ -9,7 +9,7 @@
 	"contact": {
 		"telegram": "https://t.me/akad4mka_cat"
 	},
-	"license": "CC0-1.0",
+	"license": "EULA",
 	"icon": "assets/teammate/icon.png",
 	"environment": "*",
 	"entrypoints": {
