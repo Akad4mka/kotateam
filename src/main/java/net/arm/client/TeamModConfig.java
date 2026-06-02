@@ -35,7 +35,7 @@ public class TeamModConfig {
                 TeamModConfig loaded = GSON.fromJson(reader, TeamModConfig.class);
                 if (loaded != null ){
                     if (loaded.teammates == null) {
-                        loaded.teammates = new java.util.ArrayList<>();
+                        loaded.teammates = new ArrayList<>();
                     }
                     return loaded;
                 }
